@@ -1,0 +1,30 @@
+{
+	"name": "schematicon/api-validator",
+	"type": "library",
+	"description": "Schematicon Api Validator is library for normalization and validation you API schema definition.",
+	"keywords": ["api", "validator", "structure", "schematicon"],
+	"homepage": "https://github.com/schematicon/api-validator",
+	"license": "MIT",
+	"authors": [
+		{ "name": "Schematicon Project", "homepage": "https://github.com/schematicon/api-validator/graphs/contributors" }
+	],
+	"support": {
+		"issues": "https://github.com/schematicon/api-validator/issues"
+	},
+	"require": {
+		"php": ">=7.0",
+		"nette/neon": "~2.4",
+		"nette/utils": "~2.4",
+		"schematicon/validator": "@dev"
+	},
+	"require-dev": {
+	},
+	"autoload": {
+		"psr-4": { "Schematicon\\ApiValidator\\": "src/" }
+	},
+	"extra": {
+		"branch-alias": {
+			"dev-master": "1.0-dev"
+		}
+	}
+}
