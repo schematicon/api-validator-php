@@ -1,0 +1,11 @@
+sections:
+	-
+		title: Basic
+		endpoints:
+			"/parameters":
+				parameters:
+					global_int: int
+				get:
+					parameters:
+						global_int: int|null
+						local_int: int

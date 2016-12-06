@@ -8,6 +8,7 @@
 
 namespace Schematicon\ApiValidator;
 
+use Nette\Utils\Arrays;
 use Schematicon\Validator\Normalizer as SchematiconNormalizer;
 use Schematicon\Validator\SchemaValidator;
 
@@ -117,7 +118,7 @@ class Normalizer
 
 	private function normalizeEndpointParams(array $endpoint, array $generalEndpoint): array
 	{
-		$parameters = array_merge_recursive($generalEndpoint['parameters'] ?? [], $endpoint['parameters'] ?? []);
+		$parameters = Arrays::mergeTree($endpoint['parameters'] ?? [], $generalEndpoint['parameters'] ?? []);
 		array_walk($parameters, function (& $value) {
 			$value = $this->normalizer->normalize($value);
 		});
