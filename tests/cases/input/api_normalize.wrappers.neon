@@ -29,3 +29,15 @@ sections:
 							type: map
 							properties:
 								data: @@
+			"/custom_wrapper3":
+				get:
+					response_ok:
+						schema:
+							type: map
+							properties:
+								data: any
+						wrapper:
+							type: map
+							properties:
+								page: int
+								@@: null

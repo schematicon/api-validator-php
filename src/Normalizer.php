@@ -81,21 +81,47 @@ class Normalizer
 
 	private function normalizeEndpointSchemasWrapper(array $apiSchema, array $endpoint): array
 	{
-		// add wrappers
 		foreach (['response_ok', 'response_error'] as $endpointPart) {
-			if (isset($apiSchema[$endpointPart]['wrapper']) || isset($endpoint[$endpointPart]['wrapper'])) {
-				$schema = array_key_exists('wrapper', $endpoint[$endpointPart]) ? $endpoint[$endpointPart]['wrapper'] : $apiSchema[$endpointPart]['wrapper'];
-				if ($schema !== null) {
-					array_walk_recursive($schema, function (& $value) use ($endpoint, $endpointPart) {
-						if ($value === '@@') {
-							$value = $endpoint[$endpointPart]['schema'] ?? ['type' => 'null'];
-						}
-					});
-					$endpoint[$endpointPart]['schema'] = $endpoint[$endpointPart]['schema'] = $schema;
-				}
+			if (!isset($endpoint[$endpointPart])) {
+				continue;
 			}
+
+			$wrapper = isset($endpoint[$endpointPart]['wrapper']) || array_key_exists('wrapper', $endpoint[$endpointPart])
+				? $endpoint[$endpointPart]['wrapper']
+				: ($apiSchema[$endpointPart]['wrapper'] ?? null);
+
+			if ($wrapper === null) {
+				continue;
+			}
+
+			$endpoint[$endpointPart]['schema'] = $this->recursiveWrapperReplace($wrapper, $endpoint[$endpointPart]['schema'] ?? ['type' => 'null']);
 		}
 		return $endpoint;
+	}
+
+
+	private function recursiveWrapperReplace(array $wrapper, array $insert)
+	{
+		if (array_key_exists('@@', $wrapper)) {
+			if (($insert['type'] ?? '') !== 'map') {
+				var_dump($insert);
+				throw new \RuntimeException('Schema inserted into wrapper has to be type: map.');
+			}
+
+			$result = Arrays::mergeTree($wrapper, $insert['properties']);
+			unset($result['@@']);
+			return $result;
+		}
+
+		foreach ($wrapper as $key => $value) {
+			if (is_array($value)) {
+				$wrapper[$key] = $this->recursiveWrapperReplace($value, $insert);
+			} elseif ($value === '@@') {
+				$wrapper[$key] = $insert;
+			}
+		}
+
+		return $wrapper;
 	}
 
 
