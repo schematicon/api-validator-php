@@ -68,14 +68,16 @@ class Normalizer
 
 					// add wrappers
 					foreach (['response_ok', 'response_error'] as $endpointPart) {
-						if (isset($data[$endpointPart]['wrapper'])) {
-							$schema = $data[$endpointPart]['wrapper'];
-							array_walk_recursive($schema, function (& $value) use ($endpoint, $endpointPart) {
-								if ($value === '@@') {
-									$value = $endpoint[$endpointPart]['schema'] ?? ['type' => 'null'];
-								}
-							});
-							$data['sections'][$i]['endpoints'][$url][$httpMethod][$endpointPart]['schema'] = $endpoint[$endpointPart]['schema'] = $schema;
+						if (isset($data[$endpointPart]['wrapper']) || isset($endpoint[$endpointPart]['wrapper'])) {
+							$schema = array_key_exists('wrapper', $endpoint[$endpointPart]) ? $endpoint[$endpointPart]['wrapper'] : $data[$endpointPart]['wrapper'];
+							if ($schema !== null) {
+								array_walk_recursive($schema, function (& $value) use ($endpoint, $endpointPart) {
+									if ($value === '@@') {
+										$value = $endpoint[$endpointPart]['schema'] ?? ['type' => 'null'];
+									}
+								});
+								$data['sections'][$i]['endpoints'][$url][$httpMethod][$endpointPart]['schema'] = $endpoint[$endpointPart]['schema'] = $schema;
+							}
 						}
 					}
 

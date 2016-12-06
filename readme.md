@@ -1,16 +1,16 @@
 Schematicon API Validator
 =========================
 
+[![Build Status](https://travis-ci.org/schematicon/api-validator-php.svg?branch=master)](https://travis-ci.org/schematicon/api-validator-php)
 [![Downloads this Month](https://img.shields.io/packagist/dm/schematicon/api-validator.svg?style=flat)](https://packagist.org/packages/schematicon/api-validator)
 [![Stable version](http://img.shields.io/packagist/v/schematicon/api-validator.svg?style=flat)](https://packagist.org/packages/schematicon/api-validator)
 
-### Usage
+### Installation
 
-Use composer & run builder:
+Use composer:
 
 ```bash
-$ composer create-project schematicon/doc-generator ./doc-generator
-$ ./doc-generator/apidoc build ./path/to/schema/index.neon ./out-directory
+$ composer require schematicon/api-validator
 ```
 
 
