@@ -28,18 +28,18 @@ class Normalizer
 	}
 
 
-	public function normalize(array $data): array
+	public function normalize(array $apiSchema): array
 	{
-		$data = $this->normalizeEndpointLists($data);
-		$data = $this->normalizeEndpointSchemas($data);
-		$data = $this->normalizeResourceSchemas($data);
-		return $data;
+		$apiSchema = $this->normalizeEndpointLists($apiSchema);
+		$apiSchema = $this->normalizeEndpointsSchemas($apiSchema);
+		$apiSchema = $this->normalizeResourceSchemas($apiSchema);
+		return $apiSchema;
 	}
 
 
-	private function normalizeEndpointLists(array $data): array
+	private function normalizeEndpointLists(array $apiSchema): array
 	{
-		foreach ($data['sections'] as $i => $section) {
+		foreach ($apiSchema['sections'] as $i => $section) {
 			$endpoints = [];
 			foreach ($section['endpoints'] as $index => $value) {
 				if (is_int($index)) {
@@ -50,76 +50,88 @@ class Normalizer
 					$endpoints[$index] = $value;
 				}
 			}
-			$data['sections'][$i]['endpoints'] = $endpoints;
+			$apiSchema['sections'][$i]['endpoints'] = $endpoints;
 		}
-		return $data;
+		return $apiSchema;
 	}
 
 
-	private function normalizeEndpointSchemas(array $data): array
+	private function normalizeEndpointsSchemas(array $apiSchema): array
 	{
-		foreach ($data['sections'] as $i => $section) {
+		foreach ($apiSchema['sections'] as $i => $section) {
 			foreach ($section['endpoints'] as $url => $generalEndpoint) {
 				foreach (['put', 'get', 'post', 'delete', 'patch'] as $httpMethod) {
 					if (!isset($generalEndpoint[$httpMethod])) {
 						continue;
 					}
+
 					$endpoint = $generalEndpoint[$httpMethod];
+					$normalizedEndpoint = $this->normalizeEndpointSchemas($apiSchema, $endpoint, $generalEndpoint, "[$url][$httpMethod]");
+					$apiSchema['sections'][$i]['endpoints'][$url][$httpMethod] = $normalizedEndpoint;
+				}
+			}
+		}
+		return $apiSchema;
+	}
 
-					// add wrappers
-					foreach (['response_ok', 'response_error'] as $endpointPart) {
-						if (isset($data[$endpointPart]['wrapper']) || isset($endpoint[$endpointPart]['wrapper'])) {
-							$schema = array_key_exists('wrapper', $endpoint[$endpointPart]) ? $endpoint[$endpointPart]['wrapper'] : $data[$endpointPart]['wrapper'];
-							if ($schema !== null) {
-								array_walk_recursive($schema, function (& $value) use ($endpoint, $endpointPart) {
-									if ($value === '@@') {
-										$value = $endpoint[$endpointPart]['schema'] ?? ['type' => 'null'];
-									}
-								});
-								$data['sections'][$i]['endpoints'][$url][$httpMethod][$endpointPart]['schema'] = $endpoint[$endpointPart]['schema'] = $schema;
+
+	private function normalizeEndpointSchemas(array $apiSchema, array $endpoint, array $generalEndpoint, string $errorPath): array
+	{
+		// add wrappers
+		foreach (['response_ok', 'response_error'] as $endpointPart) {
+			if (isset($apiSchema[$endpointPart]['wrapper']) || isset($endpoint[$endpointPart]['wrapper'])) {
+				$schema = array_key_exists('wrapper',
+					$endpoint[$endpointPart]) ? $endpoint[$endpointPart]['wrapper'] : $apiSchema[$endpointPart]['wrapper'];
+				if ($schema !== null) {
+					array_walk_recursive($schema,
+						function (& $value) use ($endpoint, $endpointPart) {
+							if ($value === '@@') {
+								$value = $endpoint[$endpointPart]['schema'] ?? ['type' => 'null'];
 							}
-						}
-					}
-
-					// normalize & validate schemas
-					foreach (['request', 'response_ok', 'response_error'] as $endpointPart) {
-						if (!isset($endpoint[$endpointPart]['schema'])) {
-							continue;
-						}
-
-						$validationResult = $this->validator->validate($endpoint[$endpointPart]['schema']);
-						if (!$validationResult->isValid()) {
-							throw new \RuntimeException("Schema for $url $httpMethod $endpointPart is not valid. " . implode("\n", $validationResult->getErrors()));
-						}
-						$data['sections'][$i]['endpoints'][$url][$httpMethod][$endpointPart]['schema'] = $this->normalizer->normalize($endpoint[$endpointPart]['schema']);
-					}
-
-					// normalize params
-					$parameters = array_merge_recursive($generalEndpoint['parameters'] ?? [], $endpoint['parameters'] ?? []);
-					array_walk($parameters, function (& $value) {
-						$value = $this->normalizer->normalize($value);
-					});
-					$data['sections'][$i]['endpoints'][$url][$httpMethod]['parameters'] = $parameters ?: null;
+						});
+					$endpoint[$endpointPart]['schema'] = $endpoint[$endpointPart]['schema'] = $schema;
 				}
 			}
 		}
 
-		return $data;
+		// normalize & validate schemas
+		foreach (['request', 'response_ok', 'response_error'] as $endpointPart) {
+			if (!isset($endpoint[$endpointPart]['schema'])) {
+				continue;
+			}
+
+			$validationResult = $this->validator->validate($endpoint[$endpointPart]['schema']);
+			if (!$validationResult->isValid()) {
+				throw new \RuntimeException("Schema for $errorPath is not valid. " . implode("\n",
+						$validationResult->getErrors()));
+			}
+			$endpoint[$endpointPart]['schema'] = $this->normalizer->normalize($endpoint[$endpointPart]['schema']);
+		}
+
+		// normalize params
+		$parameters = array_merge_recursive($generalEndpoint['parameters'] ?? [], $endpoint['parameters'] ?? []);
+		array_walk($parameters,
+			function (& $value) {
+				$value = $this->normalizer->normalize($value);
+			});
+		$endpoint['parameters'] = $parameters ?: null;
+
+		return $endpoint;
 	}
 
 
-	private function normalizeResourceSchemas($data)
+	private function normalizeResourceSchemas(array $apiSchema): array
 	{
 		$schemaValidator = new SchemaValidator();
 		$normalizer = new SchematiconNormalizer();
 
-		foreach ($data['resources'] ?? [] as $resourceName => $schema) {
+		foreach ($apiSchema['resources'] ?? [] as $resourceName => $schema) {
 			if (!$schemaValidator->validate($schema)->isValid()) {
 				throw new \RuntimeException("Resource $resourceName is not valid schema");
 			}
-			$data['resources'][$resourceName] = $normalizer->normalize($schema);
+			$apiSchema['resources'][$resourceName] = $normalizer->normalize($schema);
 		}
 
-		return $data;
+		return $apiSchema;
 	}
 }
