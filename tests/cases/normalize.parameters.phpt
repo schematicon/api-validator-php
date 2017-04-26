@@ -26,6 +26,10 @@ Assert::same(
 			'local_int' => [
 				'type' => 'int',
 			],
+			'optional' => [
+				'type' => 'string',
+				'optional' => true,
+			],
 			'global_float' => [
 				'type' => 'float',
 			],

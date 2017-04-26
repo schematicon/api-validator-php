@@ -10,3 +10,4 @@ sections:
 					parameters:
 						global_int: int|null
 						local_int: int
+						?optional: string
