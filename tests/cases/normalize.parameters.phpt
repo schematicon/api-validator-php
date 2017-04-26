@@ -24,6 +24,9 @@ Assert::same(
 		'local_int' => [
 			'type' => 'int',
 		],
+		'global_float' => [
+			'type' => 'float',
+		],
 	],
 	$apiSchema['sections'][0]['endpoints']['/parameters']['get']['parameters']
 );

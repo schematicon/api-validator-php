@@ -5,6 +5,7 @@ sections:
 			"/parameters":
 				parameters:
 					global_int: int
+					global_float: float
 				get:
 					parameters:
 						global_int: int|null
