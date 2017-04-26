@@ -145,10 +145,13 @@ class Normalizer
 	private function normalizeEndpointParams(array $endpoint, array $generalEndpoint): array
 	{
 		$parameters = Arrays::mergeTree($endpoint['parameters'] ?? [], $generalEndpoint['parameters'] ?? []);
-		array_walk($parameters, function (& $value) {
-			$value = $this->normalizer->normalize($value);
-		});
-		$endpoint['parameters'] = $parameters ?: null;
+		if ($parameters) {
+			$schema = ['type' => 'map', 'properties' => $parameters];
+			$schema = $this->normalizer->normalize($schema);
+			$endpoint['parameters'] = $schema;
+		} else {
+			$endpoint['parameters'] = null;
+		}
 		return $endpoint;
 	}
 

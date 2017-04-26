@@ -18,14 +18,17 @@ $apiSchema = $normalizer->normalize($loader->run(__DIR__ . '/input/api_normalize
 
 Assert::same(
 	[
-		'global_int' => [
-			'type' => 'int|null',
-		],
-		'local_int' => [
-			'type' => 'int',
-		],
-		'global_float' => [
-			'type' => 'float',
+		'type' => 'map',
+		'properties' => [
+			'global_int' => [
+				'type' => 'int|null',
+			],
+			'local_int' => [
+				'type' => 'int',
+			],
+			'global_float' => [
+				'type' => 'float',
+			],
 		],
 	],
 	$apiSchema['sections'][0]['endpoints']['/parameters']['get']['parameters']
