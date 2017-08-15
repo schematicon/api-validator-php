@@ -54,6 +54,15 @@ class Loader
 		if ($value->value === '@include') {
 			$value = $this->run($basePath . '/' . $value->attributes[0]);
 
+		// @concat
+		} elseif ($value->value === '@concat') {
+			$concatenated = [];
+			foreach ($value->attributes as $attribute) {
+				$attribute = $this->processValue($attribute, $basePath);
+				$concatenated = array_merge($concatenated, $attribute);
+			}
+			$value = $concatenated;
+
 		// @merge
 		} elseif ($value->value === '@merge') {
 			$merged = [];
