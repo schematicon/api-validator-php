@@ -22,36 +22,52 @@ class Loader
 	{
 		$content = file_get_contents($file);
 		$decoded = Neon::decode($content);
-		return $this->processArray($decoded, dirname($file));
+		return $this->processArrayValue($decoded, dirname($file));
 	}
 
 
-	private function processArray(array $array, string $basePath)
+	private function processValue($value, string $basePath)
+	{
+		if ($value instanceof Entity) {
+			return $this->processEntityValue($value, $basePath);
+		} elseif (is_array($value)) {
+			return $this->processArrayValue($value, $basePath);
+		}
+		return $value;
+	}
+
+
+	private function processArrayValue(array $array, string $basePath)
 	{
 		array_walk_recursive($array, function (& $value) use ($basePath) {
 			if ($value instanceof Entity) {
-				$value = $this->processEntity($value, $basePath);
+				$value = $this->processEntityValue($value, $basePath);
 			}
 		});
 		return $array;
 	}
 
 
-	private function processEntity(Entity $value, string $basePath)
+	private function processEntityValue(Entity $value, string $basePath)
 	{
 		// @include
 		if ($value->value === '@include') {
 			$value = $this->run($basePath . '/' . $value->attributes[0]);
 
+		// @concat
+		} elseif ($value->value === '@concat') {
+			$concatenated = [];
+			foreach ($value->attributes as $attribute) {
+				$attribute = $this->processValue($attribute, $basePath);
+				$concatenated = array_merge($concatenated, $attribute);
+			}
+			$value = $concatenated;
+
 		// @merge
 		} elseif ($value->value === '@merge') {
 			$merged = [];
 			foreach ($value->attributes as $attribute) {
-				if ($attribute instanceof Entity) {
-					$attribute = $this->processEntity($attribute, $basePath);
-				} elseif (is_array($attribute)) {
-					$attribute = $this->processArray($attribute, $basePath);
-				}
+				$attribute = $this->processValue($attribute, $basePath);
 				$merged = Arrays::mergeTree($attribute, $merged);
 			}
 			$value = $merged;
