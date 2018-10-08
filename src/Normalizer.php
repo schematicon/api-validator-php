@@ -69,7 +69,8 @@ class Normalizer
 					$endpoint = $generalEndpoint[$httpMethod];
 					$endpoint = $this->normalizeEndpointSchemasWrapper($apiSchema, $endpoint);
 					$endpoint = $this->normalizeEndpointSchemas($endpoint, "[$url][$httpMethod]");
-					$endpoint = $this->normalizeEndpointParams($endpoint, $generalEndpoint);
+					$endpoint = $this->normalizeEndpointSection($endpoint, $generalEndpoint, 'parameters');
+					$endpoint = $this->normalizeEndpointSection($endpoint, $generalEndpoint, 'headers');
 
 					$apiSchema['sections'][$i]['endpoints'][$url][$httpMethod] = $endpoint;
 				}
@@ -142,15 +143,15 @@ class Normalizer
 	}
 
 
-	private function normalizeEndpointParams(array $endpoint, array $generalEndpoint): array
+	private function normalizeEndpointSection(array $endpoint, array $generalEndpoint, string $name): array
 	{
-		$parameters = Arrays::mergeTree($endpoint['parameters'] ?? [], $generalEndpoint['parameters'] ?? []);
+		$parameters = Arrays::mergeTree($endpoint[$name] ?? [], $generalEndpoint[$name] ?? []);
 		if ($parameters) {
 			$schema = ['type' => 'map', 'properties' => $parameters];
 			$schema = $this->normalizer->normalize($schema);
-			$endpoint['parameters'] = $schema;
+			$endpoint[$name] = $schema;
 		} else {
-			$endpoint['parameters'] = null;
+			$endpoint[$name] = null;
 		}
 		return $endpoint;
 	}
